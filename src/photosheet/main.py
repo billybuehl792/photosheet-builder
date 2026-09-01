@@ -170,19 +170,21 @@ def create_photosheet(
         position = index % photos_per_page
 
         if position == 0:
+
             if index != 0:
                 c.showPage()
 
-            # Draw header on each page.
-            photo_top = draw_header(
-                c,
-                title,
-                subtitle,
-                description,
-                page_width,
-                page_height,
-                margin,
-            )
+            if index == 0:
+                # Draw header on first page.
+                photo_top = draw_header(
+                    c,
+                    title,
+                    subtitle,
+                    description,
+                    page_width,
+                    page_height,
+                    margin,
+                )
 
             # Available space for photos.
             photo_bottom = margin
