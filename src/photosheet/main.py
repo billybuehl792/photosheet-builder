@@ -3,12 +3,16 @@
 import argparse
 import math
 from pathlib import Path
+from io import BytesIO
 
 from PIL import Image, ImageOps
+from pillow_heif import register_heif_opener
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.pdfmetrics import stringWidth
 
+register_heif_opener()
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
 
@@ -24,9 +28,36 @@ def get_images(folder: Path):
 
 
 def draw_image(c, image_path, x, y, width, height):
-    """Fit an image inside a box without stretching it."""
+    """Resize and compress an image before adding it to the PDF."""
+
     with Image.open(image_path) as img:
         img = ImageOps.exif_transpose(img)
+
+        # Convert to RGB because JPEG doesn't support RGBA.
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # Don't bother keeping enormous resolution.
+        max_dimension = 1600
+
+        if max(img.size) > max_dimension:
+            img.thumbnail(
+                (max_dimension, max_dimension),
+                Image.Resampling.LANCZOS,
+            )
+
+        # Compress to JPEG in memory.
+        buffer = BytesIO()
+        img.save(
+            buffer,
+            format="JPEG",
+            quality=80,
+            optimize=True,
+        )
+        buffer.seek(0)
+
+        compressed_image = ImageReader(buffer)
+
         img_width, img_height = img.size
 
     image_ratio = img_width / img_height
@@ -43,7 +74,7 @@ def draw_image(c, image_path, x, y, width, height):
     draw_y = y + (height - draw_height) / 2
 
     c.drawImage(
-        str(image_path),
+        compressed_image,
         draw_x,
         draw_y,
         width=draw_width,
