@@ -234,8 +234,8 @@ def main():
         "-o",
         "--output",
         type=Path,
-        default=Path("output/photosheet.pdf"),
-        help="Output PDF filename (default: output/photosheet.pdf)",
+        default=Path("photosheet.pdf"),
+        help="Output PDF filename (default: photosheet.pdf)",
     )
 
     parser.add_argument(
